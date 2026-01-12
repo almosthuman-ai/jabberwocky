@@ -33,6 +33,8 @@ const GENRES = {
   ]
 };
 
+const DEFAULT_TITLE = 'Weekly English Quiz';
+
 const Editor: React.FC<EditorProps> = ({ 
     data, 
     onChange, 
@@ -51,6 +53,7 @@ const Editor: React.FC<EditorProps> = ({
   const [books, setBooks] = useState<BookData[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>("");
   const [selectedWeek, setSelectedWeek] = useState<string>("");
+  const [userTitleOverride, setUserTitleOverride] = useState(false);
 
   useEffect(() => {
     // Load available books on mount
@@ -84,6 +87,26 @@ const Editor: React.FC<EditorProps> = ({
           // handleInputChange('title', `Weekly Quiz - Week ${week}`);
       }
   };
+
+  useEffect(() => {
+    if (!selectedBook || !selectedWeek) return;
+    if (userTitleOverride) return;
+
+    const trimmedWeek = selectedWeek.trim();
+    const formattedWeek = /^week\b/i.test(trimmedWeek) ? trimmedWeek : `Week ${trimmedWeek}`;
+    const computedTitle = `${selectedBook} ${formattedWeek}`.trim();
+
+    if (data.title !== computedTitle) {
+      handleInputChange('title', computedTitle);
+    }
+  }, [selectedBook, selectedWeek, userTitleOverride, data.title]);
+
+  useEffect(() => {
+    const trimmed = (data.title || '').trim();
+    if (!trimmed || trimmed === DEFAULT_TITLE) {
+      setUserTitleOverride(false);
+    }
+  }, [data.title]);
 
   const handleQuestionChange = (index: number, field: keyof Question, value: any) => {
     const newQuestions = [...data.questions];
@@ -290,7 +313,12 @@ const Editor: React.FC<EditorProps> = ({
               <input
                 type="text"
                 value={data.title}
-                onChange={(e) => handleInputChange('title', e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleInputChange('title', value);
+                  const trimmed = value.trim();
+                  setUserTitleOverride(trimmed.length > 0 && trimmed !== DEFAULT_TITLE);
+                }}
                 className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50 text-gray-900"
                 placeholder="e.g. Weekly Test #4"
               />

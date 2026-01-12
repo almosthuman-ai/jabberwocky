@@ -258,7 +258,12 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
   return (
     <div className="flex flex-col gap-8 print:gap-0">
       {/* Page 1: Vocabulary */}
-      <div className="a4-page relative flex flex-col">
+      <div
+        className="a4-page relative flex flex-col"
+        data-page-id="student-1"
+        data-page-role="student"
+        data-page-label="Page 1: Vocabulary"
+      >
         <div className="mb-4 border-b-2 border-black pb-2">
           <h1 className="mb-2 text-[28px] font-bold tracking-tight text-gray-900">{data.title}</h1>
           <div className="flex items-end justify-between">
@@ -363,7 +368,13 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
       </div>
 
       {/* Page 2: Reading Comprehension */}
-      <div ref={page2Ref} className="a4-page relative flex flex-col">
+      <div
+        ref={page2Ref}
+        className="a4-page relative flex flex-col"
+        data-page-id="student-2"
+        data-page-role="student"
+        data-page-label="Page 2: Reading"
+      >
         <div className="mb-4 border-b-2 border-black pb-2">
           <h2 className="text-lg font-bold uppercase tracking-wide text-gray-900">Reading Comprehension</h2>
         </div>
@@ -390,7 +401,12 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
 
       {/* Page 3: Writing Exercise & overflow questions */}
       {showPage3 && (
-        <div className="a4-page relative flex flex-col">
+        <div
+          className="a4-page relative flex flex-col"
+          data-page-id="student-3"
+          data-page-role="student"
+          data-page-label="Page 3: Writing"
+        >
           <div className="mb-6 border-b-2 border-black pb-2">
             <h1 className="mb-2 text-[28px] font-bold tracking-tight text-gray-900">{data.title}</h1>
             <div className="flex items-end justify-between">
@@ -464,7 +480,13 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
             : "Teacher's Logic Guide (Continued)";
 
           return (
-            <div key={`teacher-guide-${index}`} className="a4-page relative flex flex-col">
+            <div
+              key={`teacher-guide-${index}`}
+              className="a4-page relative flex flex-col"
+              data-page-id={`teacher-${index + 1}`}
+              data-page-role="teacher"
+              data-page-label={`Teacher Guide Page ${index + 1}`}
+            >
               <div className="mb-5 flex items-end justify-between border-b-2 border-yellow-600 pb-2">
                 <div className="flex flex-col">
                   <h1 className="text-[24px] font-semibold tracking-tight text-gray-900">{data.title}</h1>
@@ -491,7 +513,10 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
         })}
 
       {isTeacherMode && !teacherHasContent && (
-        <div className="a4-page relative flex flex-col">
+        <div
+          className="a4-page relative flex flex-col"
+          data-page-downloadable="false"
+        >
           <div className="mb-5 flex items-end justify-between border-b-2 border-yellow-600 pb-2">
             <div className="flex flex-col">
               <h1 className="text-[24px] font-semibold tracking-tight text-gray-900">{data.title}</h1>

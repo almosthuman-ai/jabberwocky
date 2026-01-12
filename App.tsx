@@ -3,8 +3,10 @@ import { TestData, ViewMode, GeneratorStatus } from './types';
 import Editor from './components/Editor';
 import A4Preview, { A4PreviewHandle } from './components/A4Preview';
 import SettingsModal from './components/SettingsModal';
-import { Printer, PenTool, ImageDown, Save, Settings, AlertTriangle, GraduationCap, User, ZoomIn, ZoomOut, Maximize2, RefreshCcw, Trash2 } from 'lucide-react';
+import { Printer, PenTool, ImageDown, Save, Settings, AlertTriangle, GraduationCap, User, ZoomIn, ZoomOut, Maximize2, RefreshCcw, Trash2, X, CheckSquare, Square } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { generateLogicGuide, getSettings } from './services/ai';
 
 const INITIAL_DATA: TestData = {
@@ -39,6 +41,15 @@ const App: React.FC = () => {
 
   // Confirmation Modal State
   const [pendingAction, setPendingAction] = useState<'print' | 'download' | null>(null);
+  const [skipWarning, setSkipWarning] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('skip_print_warning') === '1';
+  });
+  const [dialogDontShow, setDialogDontShow] = useState(false);
+
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [availablePages, setAvailablePages] = useState<{ id: string; label: string; role: 'student' | 'teacher' }[]>([]);
+  const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const previewWrapperRef = useRef<HTMLDivElement>(null);
@@ -95,60 +106,126 @@ const App: React.FC = () => {
     window.print();
   };
 
-  const executeDownloadPNG = async () => {
+  const mapPages = useCallback(() => {
     const element = document.getElementById('preview-content');
-    if (!element) return;
+    if (!element) return [] as { id: string; label: string; role: 'student' | 'teacher' }[];
+    const nodeList = Array.from(element.querySelectorAll<HTMLElement>('.a4-page'));
+    return nodeList
+      .filter((node) => node.getAttribute('data-page-downloadable') !== 'false')
+      .map((node, index) => {
+        const id = node.dataset.pageId || `page-${index + 1}`;
+        const label = node.dataset.pageLabel || `Page ${index + 1}`;
+        const role = (node.dataset.pageRole as 'student' | 'teacher') || 'student';
+        return { id, label, role };
+      });
+  }, []);
 
-    setIsDownloading(true);
-    const wrapper = previewWrapperRef.current;
-    const previousTransform = wrapper?.style.transform;
-    const previousOrigin = wrapper?.style.transformOrigin;
+  const captureSelectedPages = useCallback(
+    async (pageIds: string[]) => {
+      const element = document.getElementById('preview-content');
+      if (!element) return [] as { id: string; canvas: HTMLCanvasElement }[];
 
-    if (wrapper) {
-      wrapper.style.transform = 'scale(1)';
-      wrapper.style.transformOrigin = 'top center';
-    }
+      const wrapper = previewWrapperRef.current;
+      const previousTransform = wrapper?.style.transform;
+      const previousOrigin = wrapper?.style.transformOrigin;
 
-    try {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      if (wrapper) {
+        wrapper.style.transform = 'scale(1)';
+        wrapper.style.transformOrigin = 'top center';
+      }
 
-      const pages = element.querySelectorAll('.a4-page');
+      try {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
-      for (let i = 0; i < pages.length; i++) {
-        const page = pages[i] as HTMLElement;
-        try {
-          const canvas = await html2canvas(page, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff'
-          });
-
-          const dataUrl = canvas.toDataURL('image/png');
-          const link = document.createElement('a');
-          link.href = dataUrl;
-          link.download = `${data.title.replace(/\s+/g, '_')}_Page_${i + 1}${viewMode === 'teacher' ? '_TEACHER' : ''}.png`;
-          link.click();
-        } catch (e) {
-          console.error('Error generating image', e);
-          alert('Could not generate image for page ' + (i + 1));
+        const pages = Array.from(element.querySelectorAll<HTMLElement>('.a4-page'));
+        const filtered = pages.filter((page) => pageIds.includes(page.dataset.pageId || ''));
+        const results: { id: string; canvas: HTMLCanvasElement }[] = [];
+        for (const page of filtered) {
+          const pageId = page.dataset.pageId || 'page';
+          try {
+            const canvas = await html2canvas(page, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff'
+            });
+            results.push({ id: pageId, canvas });
+          } catch (e) {
+            console.error('Error generating image', e);
+            alert('Could not generate image for page ' + (page.dataset.pageLabel || pageId));
+          }
+        }
+        return results;
+      } finally {
+        if (wrapper) {
+          wrapper.style.transform = previousTransform ?? '';
+          wrapper.style.transformOrigin = previousOrigin ?? 'top center';
         }
       }
-    } finally {
-      if (wrapper) {
-        wrapper.style.transform = previousTransform ?? '';
-        wrapper.style.transformOrigin = previousOrigin ?? 'top center';
-      }
-      setIsDownloading(false);
-    }
-  };
+    },
+    []
+  );
 
-  const handlePrintRequest = () => setPendingAction('print');
-  const handleDownloadRequest = () => setPendingAction('download');
+  const executeDownloadPNG = useCallback(
+    async (pageIds: string[]) => {
+      if (!pageIds.length) return;
+      setIsDownloading(true);
+      try {
+        const captures = await captureSelectedPages(pageIds);
+        if (!captures.length) return;
+        const zip = new JSZip();
+        const folder = zip.folder('pages') || zip;
+        const sanitizedTitle = data.title.trim() ? data.title.trim().replace(/[^a-z0-9-_]+/gi, '_') : 'Test';
+        captures.forEach(({ canvas }, index) => {
+          const baseName = `${sanitizedTitle}_Page_${index + 1}`;
+          const dataUrl = canvas.toDataURL('image/png');
+          const base64 = dataUrl.split(',')[1];
+          folder.file(`${baseName}.png`, base64, { base64: true });
+        });
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const zipName = `${sanitizedTitle || 'Test'}.zip`;
+        saveAs(blob, zipName);
+      } finally {
+        setIsDownloading(false);
+      }
+    },
+    [captureSelectedPages, data.title]
+  );
+
+  const beginAction = useCallback(
+    (action: 'print' | 'download') => {
+      if (skipWarning) {
+        if (action === 'print') {
+          executePrint();
+        } else {
+          const pages = mapPages();
+          setAvailablePages(pages);
+          setSelectedPageIds(pages.map((p) => p.id));
+          setDownloadModalOpen(true);
+        }
+        return;
+      }
+      setDialogDontShow(false);
+      setPendingAction(action);
+    },
+    [skipWarning, executePrint, mapPages]
+  );
+
+  const handlePrintRequest = useCallback(() => beginAction('print'), [beginAction]);
+  const handleDownloadRequest = useCallback(() => beginAction('download'), [beginAction]);
 
   const confirmPendingAction = () => {
+      if (dialogDontShow) {
+        localStorage.setItem('skip_print_warning', '1');
+        setSkipWarning(true);
+      }
       if (pendingAction === 'print') executePrint();
-      if (pendingAction === 'download') executeDownloadPNG();
+      if (pendingAction === 'download') {
+        const pages = mapPages();
+        setAvailablePages(pages);
+        setSelectedPageIds(pages.map((p) => p.id));
+        setDownloadModalOpen(true);
+      }
       setPendingAction(null);
   };
 
@@ -318,19 +395,127 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t">
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t">
+              <label className="flex items-center gap-2 text-xs text-gray-600 select-none">
+                <input
+                  type="checkbox"
+                  checked={dialogDontShow}
+                  onChange={(e) => setDialogDontShow(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                Don't show this again
+              </label>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setPendingAction(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white hover:text-gray-900 border border-gray-300 rounded-md shadow-sm transition-colors"
+                >
+                  Cancel & Verify
+                </button>
+                <button
+                  onClick={confirmPendingAction}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors flex items-center gap-2"
+                >
+                  {pendingAction === 'print' ? <Printer className="w-4 h-4" /> : <ImageDown className="w-4 h-4" />}
+                  Proceed to {pendingAction === 'print' ? 'Print' : 'Download'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {downloadModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:hidden">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <ImageDown className="w-5 h-5 text-indigo-600" />
+                Select Pages to Export
+              </h3>
               <button
-                onClick={() => setPendingAction(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-white hover:text-gray-900 border border-gray-300 rounded-md shadow-sm transition-colors"
+                onClick={() => {
+                  setDownloadModalOpen(false);
+                  setSelectedPageIds([]);
+                }}
+                className="text-gray-400 hover:text-gray-600"
               >
-                Cancel & Verify
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Pages</span>
+                <div className="flex gap-2">
+                  <button
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                    onClick={() => setSelectedPageIds(availablePages.map((p) => p.id))}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    className="text-xs font-semibold text-gray-500 hover:text-gray-700"
+                    onClick={() => setSelectedPageIds([])}
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {availablePages.map((page) => {
+                  const checked = selectedPageIds.includes(page.id);
+                  return (
+                    <label
+                      key={page.id}
+                      className={`flex items-center justify-between border rounded-md px-3 py-2 text-sm transition ${checked ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {checked ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-gray-400" />}
+                        <span className="font-medium text-gray-800">{page.label}</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="hidden"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPageIds((prev) => [...prev, page.id]);
+                          } else {
+                            setSelectedPageIds((prev) => prev.filter((id) => id !== page.id));
+                          }
+                        }}
+                      />
+                      <span className={`text-xs uppercase tracking-wide ${page.role === 'teacher' ? 'text-amber-600' : 'text-indigo-600'}`}>
+                        {page.role === 'teacher' ? 'Teacher' : 'Student'}
+                      </span>
+                    </label>
+                  );
+                })}
+                {availablePages.length === 0 && (
+                  <div className="text-sm text-gray-500 italic">No pages detected.</div>
+                )}
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setDownloadModalOpen(false);
+                  setSelectedPageIds([]);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+              >
+                Cancel
               </button>
               <button
-                onClick={confirmPendingAction}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm transition-colors flex items-center gap-2"
+                onClick={async () => {
+                  await executeDownloadPNG(selectedPageIds);
+                  setDownloadModalOpen(false);
+                  setSelectedPageIds([]);
+                }}
+                disabled={!selectedPageIds.length || isDownloading}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm disabled:opacity-50"
               >
-                {pendingAction === 'print' ? <Printer className="w-4 h-4" /> : <ImageDown className="w-4 h-4" />}
-                Proceed to {pendingAction === 'print' ? 'Print' : 'Download'}
+                {isDownloading ? 'Preparing...' : 'Download ZIP'}
               </button>
             </div>
           </div>

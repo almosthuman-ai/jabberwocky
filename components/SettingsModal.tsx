@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AISettings, AIProvider } from '../types';
 import { X, Check, Key } from 'lucide-react';
 
@@ -13,6 +13,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     googleKey: '',
     openaiKey: ''
   });
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const saveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('ai_settings');
@@ -25,12 +27,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const handleSave = () => {
     localStorage.setItem('ai_settings', JSON.stringify(settings));
-    onClose();
-    // Optional: Trigger a reload or toast? 
-    // For now, the services read directly from localStorage so it updates immediately.
-    alert("Settings saved successfully.");
+    setSaveStatus('saved');
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = window.setTimeout(() => {
+      setSaveStatus('idle');
+      saveTimeoutRef.current = null;
+    }, 2000);
   };
 
   if (!isOpen) return null;
@@ -126,7 +141,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t">
+        <div className="px-6 py-4 bg-gray-50 flex items-center justify-end gap-3 border-t">
+          {saveStatus === 'saved' && (
+            <span className="flex items-center gap-1 text-sm font-medium text-emerald-600">
+              <Check className="w-4 h-4" />
+              Saved
+            </span>
+          )}
           <button 
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition"
