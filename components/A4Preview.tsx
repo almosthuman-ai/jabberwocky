@@ -292,64 +292,64 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
 
         <div className="flex flex-1 flex-col justify-between gap-4 pb-12">
           {data.vocabWords.slice(0, 5).map((item, i) => (
-            <div key={i} className="flex flex-1 gap-3 rounded-sm border border-gray-700 p-3">
-              <div className="flex w-6 select-none items-center justify-center text-2xl font-bold text-gray-300">
-                {i + 1}
-              </div>
-              <div className="flex flex-1 flex-col justify-between">
-                <div className="mb-1 flex items-end gap-3">
-                  <div className="flex min-h-[30px] flex-1 items-end border-b border-gray-300 pb-1">
-                    {isTeacherMode ? (
-                      <span className="font-serif text-xl font-bold tracking-wide text-black">
-                        {item.word || ''}
-                      </span>
-                    ) : (
-                      <div className="h-full w-full" />
-                    )}
-                  </div>
-                  <div className="flex w-24 flex-col">
-                    <span className="text-[9px] font-bold uppercase text-gray-500">Part of Speech</span>
-                    <div className="flex h-6 items-end justify-center border-b border-gray-300">
-                      {isTeacherMode ? (
-                        <span className="text-[11px] font-semibold text-red-700">{item.pos || ''}</span>
-                      ) : (
-                        <div className="h-full w-full" />
-                      )}
-                    </div>
+            <div
+              key={i}
+              className="grid grid-cols-[auto_1fr] gap-4 rounded-sm border border-gray-700 p-3 mb-6"
+            >
+              <div className="text-2xl font-bold text-gray-400 self-start">{i + 1}</div>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-baseline gap-4 border-b border-gray-300 pb-2">
+                  {isTeacherMode ? (
+                    <span className="font-serif text-4xl font-bold tracking-tight text-gray-900">
+                      {item.word || ''}
+                    </span>
+                  ) : (
+                    <span className="min-h-[2.5rem] min-w-[12rem] border-b border-dashed border-gray-300" />
+                  )}
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-base font-semibold uppercase tracking-wide text-gray-600">
+                      Part of Speech
+                    </span>
+                    <span className="text-2xl font-semibold text-red-700">
+                      {isTeacherMode ? item.pos || '' : ''}
+                    </span>
                   </div>
                 </div>
-                <div className="mt-1 flex flex-col gap-1.5">
+
+                <div className="flex flex-col gap-3">
                   {isTeacherMode ? (
                     item.definitions && item.definitions.length > 0 ? (
-                      item.definitions.map((def, dIdx) => (
-                        <div key={dIdx} className="flex flex-col">
-                          <span className="text-[9px] font-bold uppercase text-gray-500">
-                            Definition {dIdx + 1}
-                          </span>
-                          <div className="flex min-h-[1.8rem] w-full flex-col justify-end border-b border-dashed border-gray-200 pb-1">
-                            <div className="text-[11px] leading-tight text-gray-800">{def.text}</div>
-                            <div className="text-[9px] leading-tight text-gray-500">{def.translation}</div>
-                          </div>
-                        </div>
-                      ))
+                      item.definitions.map((def, dIdx) => {
+                        if (!def.text && !def.translation) {
+                          return null;
+                        }
+                        const primary = def.text?.trim();
+                        const secondary = def.translation?.trim();
+                        const line = [primary, secondary].filter(Boolean).join(': ');
+                        return (
+                          <p key={dIdx} className="text-xl leading-relaxed text-gray-900">
+                            {line || `Definition ${dIdx + 1}`}
+                          </p>
+                        );
+                      })
                     ) : (
-                      <div className="text-xs italic text-gray-400">No definitions loaded.</div>
+                      <div className="text-base italic text-gray-400">No definitions loaded.</div>
                     )
                   ) : (
-                    <>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-bold uppercase text-gray-500">
+                    <div className="flex flex-col gap-6">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
                           Definition / Sentence 1
                         </span>
-                        <div className="h-8 w-full border-b border-dashed border-gray-200" />
+                        <div className="h-12 w-full border-b-2 border-dashed border-gray-200" />
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-bold uppercase text-gray-500">
+                      <div className="flex flex-col gap-2">
+                        <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
                           Definition / Sentence 2
                         </span>
-                        <div className="h-8 w-full border-b border-dashed border-gray-200" />
+                        <div className="h-12 w-full border-b-2 border-dashed border-gray-200" />
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
