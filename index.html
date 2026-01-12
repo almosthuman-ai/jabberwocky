@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+  <head>
+    <meta name="google" content="notranslate" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weekly Test Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Custom print styles to ensure A4 rendering */
+      @media print {
+        @page {
+          size: A4 portrait;
+          margin: 0;
+        }
+        
+        /* Reset all structural constraints */
+        html, body, #root, #app-container, #main-area, #scroll-area {
+          height: auto !important;
+          overflow: visible !important;
+          background: white !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: block !important;
+          position: static !important;
+        }
+
+        /* Hide generic UI elements */
+        .no-print, button, .toolbar, .sidebar {
+          display: none !important;
+        }
+
+        /* Reset the scale transform wrapper inside scroll-area */
+        #scroll-area > div {
+           transform: none !important;
+           padding: 0 !important;
+        }
+
+        /* Ensure the preview container renders normally */
+        #preview-content {
+            width: 100% !important;
+            margin: 0 !important;
+            position: static !important;
+        }
+
+        /* Page specific styles */
+        .a4-page {
+          margin: 0 !important;
+          box-shadow: none !important;
+          page-break-after: always;
+          width: 210mm !important;
+          height: 297mm !important;
+          overflow: hidden !important;
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+          border: none !important;
+        }
+        
+        .a4-page:last-child {
+          page-break-after: auto;
+        }
+      }
+      
+      .a4-page {
+        width: 210mm;
+        height: 297mm;
+        background: white;
+        margin: 0 auto;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        padding: 10mm 15mm;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      
+      .serif-font {
+        font-family: 'Noto Serif TC', serif;
+      }
+      
+      .sans-font {
+        font-family: 'Noto Sans TC', sans-serif;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "html2canvas": "https://esm.sh/html2canvas@1.4.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 h-screen overflow-hidden flex flex-col">
+    <div id="root" class="h-full flex flex-col"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

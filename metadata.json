@@ -1,0 +1,5 @@
+{
+  "name": "Weekly Test Generator",
+  "description": "A tool for teachers to generate printable A4 weekly English tests with Vocabulary and Reading Comprehension sections. Includes AI-powered question generation.",
+  "requestFramePermissions": []
+}
