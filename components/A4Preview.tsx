@@ -295,33 +295,33 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
           </p>
         </div>
 
-        <div className="flex flex-1 flex-col justify-between gap-4 pb-12">
+        <div className="flex flex-col gap-4 pb-6">
           {data.vocabWords.slice(0, 5).map((item, i) => (
             <div
               key={i}
-              className="grid grid-cols-[auto_1fr] gap-4 rounded-sm border border-gray-700 p-3 mb-6"
+              className="grid grid-cols-[auto_1fr] gap-3 rounded-sm border border-gray-700 p-3"
             >
-              <div className="text-2xl font-bold text-gray-400 self-start">{i + 1}</div>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-baseline gap-4 border-b border-gray-300 pb-2">
+              <div className="text-xl font-bold text-gray-400 leading-none self-start pt-0.5">{i + 1}</div>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-baseline gap-3 border-b border-gray-300 pb-1.5">
                   {isTeacherMode ? (
-                    <span className="font-serif text-4xl font-bold tracking-tight text-gray-900">
+                    <span className="font-serif text-[30px] font-bold tracking-tight text-gray-900 leading-tight">
                       {item.word || ''}
                     </span>
                   ) : (
-                    <span className="min-h-[2.5rem] min-w-[12rem] border-b border-dashed border-gray-300" />
+                    <span className="min-h-[2.25rem] min-w-[10rem] border-b border-dashed border-gray-300" />
                   )}
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-base font-semibold uppercase tracking-wide text-gray-600">
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-gray-600">
                       Part of Speech
                     </span>
-                    <span className="text-2xl font-semibold text-red-700">
+                    <span className="text-xl font-semibold text-red-700 leading-tight">
                       {isTeacherMode ? item.pos || '' : ''}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   {isTeacherMode ? (
                     item.definitions && item.definitions.length > 0 ? (
                       item.definitions.map((def, dIdx) => {
@@ -341,18 +341,18 @@ const A4Preview = forwardRef<A4PreviewHandle, A4PreviewProps>(({ data, viewMode 
                       <div className="text-base italic text-gray-400">No definitions loaded.</div>
                     )
                   ) : (
-                    <div className="flex flex-col gap-6">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                           Definition / Sentence 1
                         </span>
-                        <div className="h-12 w-full border-b-2 border-dashed border-gray-200" />
+                        <div className="h-8 w-full border-b-2 border-dashed border-gray-200" />
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                           Definition / Sentence 2
                         </span>
-                        <div className="h-12 w-full border-b-2 border-dashed border-gray-200" />
+                        <div className="h-8 w-full border-b-2 border-dashed border-gray-200" />
                       </div>
                     </div>
                   )}
