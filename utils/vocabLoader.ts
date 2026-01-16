@@ -1,4 +1,5 @@
 import { VocabularyWord, VocabularyDefinition, BookData } from "../types";
+import { eow5Data } from "../data/eow5";
 import { eow6Data } from "../data/eow6";
 
 const parseCSVLine = (line: string): string[] => {
@@ -65,6 +66,9 @@ export const getAvailableBooks = (): BookData[] => {
     const books: BookData[] = [];
     
     // Use the imported string directly
+    if (eow5Data) {
+        books.push(parseCsvToBook("EOW5", eow5Data));
+    }
     if (eow6Data) {
         books.push(parseCsvToBook("EOW6", eow6Data));
     }
