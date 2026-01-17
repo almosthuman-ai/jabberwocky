@@ -764,6 +764,7 @@ export const generateLogicGuide = async (passage: string, questions: Question[],
     TONE & STYLE:
     - **Active & Helpful:** Use phrases like "這裡的字尾告訴我們..." instead of passive voice like "單字被識別為...".
     - **Natural Teaching Voice:** Explain *how* to solve the question using clues in the text.
+    - OPTIONAL: If there is a common distractor (wrong answer) that students usually pick, briefly explain why that specific trap is wrong in the 解析 section. (e.g., "很多同學會選 A, 但注意看這裡的時態...")
     
     Start directly with ### Question 1.`;
 
